@@ -1,17 +1,18 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Text } from 'react-native';
-import { colors } from '../../src/lib/colors';
+import { font, palette } from '../../src/lib/theme';
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
+function TabIcon({ glyph, focused }: { glyph: string; focused: boolean }) {
   return (
     <Text
       style={{
-        fontSize: 20,
-        opacity: focused ? 1 : 0.55,
+        fontSize: 18,
+        color: focused ? palette.aetherGold : palette.smoke,
+        opacity: focused ? 1 : 0.7,
       }}
     >
-      {label}
+      {glyph}
     </Text>
   );
 }
@@ -20,42 +21,48 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textDim,
+        tabBarActiveTintColor: palette.aetherGold,
+        tabBarInactiveTintColor: palette.smoke,
         tabBarStyle: {
-          backgroundColor: colors.bgElev,
-          borderTopColor: colors.border,
+          backgroundColor: palette.voidBlack,
+          borderTopColor: palette.crypt,
+          borderTopWidth: 1,
         },
-        headerStyle: { backgroundColor: colors.bg },
-        headerTintColor: colors.text,
+        tabBarLabelStyle: {
+          fontFamily: font.title,
+          fontWeight: '700',
+          letterSpacing: 2,
+          fontSize: 10,
+        },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Capture',
-          tabBarIcon: ({ focused }) => <TabIcon label="🕷" focused={focused} />,
+          title: 'CAPTURE',
+          tabBarIcon: ({ focused }) => <TabIcon glyph="✺" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="collection"
         options={{
-          title: 'Collection',
-          tabBarIcon: ({ focused }) => <TabIcon label="🗂" focused={focused} />,
+          title: 'BESTIARY',
+          tabBarIcon: ({ focused }) => <TabIcon glyph="❦" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="leaderboard"
         options={{
-          title: 'Leaderboard',
-          tabBarIcon: ({ focused }) => <TabIcon label="🏆" focused={focused} />,
+          title: 'HUNT',
+          tabBarIcon: ({ focused }) => <TabIcon glyph="✦" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon label="👤" focused={focused} />,
+          title: 'WANDERER',
+          tabBarIcon: ({ focused }) => <TabIcon glyph="◈" focused={focused} />,
         }}
       />
     </Tabs>

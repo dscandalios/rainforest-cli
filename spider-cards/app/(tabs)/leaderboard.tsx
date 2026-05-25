@@ -1,84 +1,271 @@
 import { useQuery } from '@tanstack/react-query';
-import React from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
-import { TierBadge } from '../../src/components/TierBadge';
-import { getLeaderboard } from '../../src/lib/api';
-import { colors } from '../../src/lib/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { Avatar } from '../../src/components/Avatar';
+import {
+  avatarPublicUrl,
+  getLeaderboard,
+  getMyLeaderboard,
+  type LeaderboardEntry,
+} from '../../src/lib/api';
+import { font, palette, tierTheme } from '../../src/lib/theme';
 import type { Tier } from '../../src/types';
 
+type Scope = 'global' | 'mine';
+
 export default function LeaderboardScreen() {
+  const [scope, setScope] = useState<Scope>('global');
+
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['leaderboard'],
-    queryFn: getLeaderboard,
+    queryKey: ['leaderboard', scope],
+    queryFn: scope === 'global' ? getLeaderboard : getMyLeaderboard,
   });
 
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
-  }
-
   return (
-    <FlatList
-      data={data ?? []}
-      contentContainerStyle={{ padding: 12, paddingBottom: 60 }}
-      keyExtractor={(e) => e.id}
-      onRefresh={refetch}
-      refreshing={isRefetching}
-      ListHeaderComponent={
-        <Text style={styles.title}>Top Spiders — global</Text>
-      }
-      renderItem={({ item, index }) => (
-        <View style={styles.row}>
-          <Text style={styles.rank}>#{index + 1}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{item.common_name}</Text>
-            <Text style={styles.sciName}>{item.scientific_name}</Text>
-            <Text style={styles.byline}>
-              by @{item.handle}
-              {item.city ? ` · ${item.city}` : ''}
-            </Text>
-          </View>
-          <View style={{ alignItems: 'flex-end', gap: 4 }}>
-            <TierBadge tier={item.tier as Tier} />
-            <Text style={styles.score}>{Math.round(item.final_score)}</Text>
-          </View>
+    <View style={styles.wrap}>
+      <View style={styles.headerWrap}>
+        <Text style={styles.eyebrow}>· THE HUNT ·</Text>
+        <Text style={styles.title}>Leaderboard</Text>
+        <View style={styles.rule} />
+      </View>
+
+      <View style={styles.segmentWrap}>
+        <SegmentBtn
+          label="Mine"
+          active={scope === 'mine'}
+          onPress={() => setScope('mine')}
+        />
+        <SegmentBtn
+          label="Global"
+          active={scope === 'global'}
+          onPress={() => setScope('global')}
+        />
+      </View>
+
+      {isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={palette.aetherGold} />
         </View>
+      ) : (
+        <FlatList
+          data={data ?? []}
+          contentContainerStyle={styles.listContent}
+          keyExtractor={(e) => e.id}
+          onRefresh={refetch}
+          refreshing={isRefetching}
+          ListEmptyComponent={
+            <View style={styles.center}>
+              <Text style={styles.empty}>
+                {scope === 'mine'
+                  ? 'No captures yet. The bestiary stands empty.'
+                  : 'The hunters have yet to walk these woods.'}
+              </Text>
+            </View>
+          }
+          renderItem={({ item, index }) => (
+            <Row entry={item} rank={index + 1} />
+          )}
+          ItemSeparatorComponent={() => <View style={styles.sep} />}
+        />
       )}
-    />
+    </View>
+  );
+}
+
+function SegmentBtn({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.segmentBtn}>
+      {active ? (
+        <LinearGradient
+          colors={[palette.aetherGold, palette.ember]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+      <Text
+        style={[
+          styles.segmentText,
+          active && { color: palette.voidBlack },
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function Row({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
+  const tt = tierTheme[entry.tier as Tier];
+  return (
+    <View
+      style={[
+        styles.row,
+        { borderColor: tt.primary, backgroundColor: palette.crypt },
+      ]}
+    >
+      <View style={styles.rankWrap}>
+        <Text style={[styles.rankNum, { color: tt.accent }]}>
+          {rank.toString().padStart(2, '0')}
+        </Text>
+      </View>
+      <Avatar
+        uri={avatarPublicUrl(entry.avatar_path)}
+        handle={entry.handle}
+        size={42}
+      />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={styles.handle} numberOfLines={1}>
+          @{entry.handle}
+        </Text>
+        <Text style={styles.species} numberOfLines={1}>
+          {entry.common_name}
+        </Text>
+        <Text style={styles.sci} numberOfLines={1}>
+          {entry.scientific_name}
+          {entry.city ? ` · ${entry.city}` : ''}
+        </Text>
+      </View>
+      <View style={styles.scoreWrap}>
+        <Text style={[styles.scoreLabel, { color: tt.accent }]}>
+          {tt.label.toUpperCase()}
+        </Text>
+        <Text style={styles.scoreValue}>
+          {Math.round(entry.final_score)}
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrap: { flex: 1, backgroundColor: palette.voidBlack },
+  headerWrap: {
+    paddingTop: 16,
+    paddingBottom: 8,
+    alignItems: 'center',
+    gap: 4,
+  },
+  eyebrow: {
+    color: palette.aetherGold,
+    fontFamily: font.title,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 5,
+    opacity: 0.85,
+  },
+  title: {
+    color: palette.bone,
+    fontFamily: font.title,
+    fontWeight: '900',
+    fontSize: 28,
+    letterSpacing: 1,
+  },
+  rule: {
+    width: 60,
+    height: 1,
+    backgroundColor: palette.aetherGold,
+    opacity: 0.5,
+    marginTop: 4,
+  },
+  segmentWrap: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 6,
+    marginBottom: 8,
+    borderColor: palette.aetherGold,
+    borderWidth: 1,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  segmentText: {
+    color: palette.aetherGold,
+    fontFamily: font.title,
+    fontWeight: '800',
+    letterSpacing: 3,
+    fontSize: 12,
+  },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.bg,
+    padding: 40,
   },
-  title: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 12,
+  empty: {
+    color: palette.smoke,
+    fontFamily: font.serif,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    fontSize: 14,
   },
+  listContent: { paddingHorizontal: 14, paddingTop: 4, paddingBottom: 40 },
+  sep: { height: 8 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 10,
-    backgroundColor: colors.bgElev,
-    borderColor: colors.border,
+    borderRadius: 8,
     borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 8,
-    gap: 12,
+    gap: 10,
   },
-  rank: { color: colors.textDim, fontWeight: '800', width: 40 },
-  name: { color: colors.text, fontWeight: '700', fontSize: 16 },
-  sciName: { color: colors.textDim, fontStyle: 'italic', fontSize: 12 },
-  byline: { color: colors.textDim, fontSize: 11, marginTop: 2 },
-  score: { color: colors.text, fontWeight: '800', fontSize: 18 },
+  rankWrap: { width: 30, alignItems: 'center' },
+  rankNum: {
+    fontFamily: font.title,
+    fontWeight: '900',
+    fontSize: 16,
+  },
+  handle: {
+    color: palette.bone,
+    fontFamily: font.title,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  species: {
+    color: palette.bone,
+    fontFamily: font.serif,
+    fontSize: 12,
+    opacity: 0.85,
+  },
+  sci: {
+    color: palette.smoke,
+    fontFamily: font.serif,
+    fontStyle: 'italic',
+    fontSize: 10,
+  },
+  scoreWrap: { alignItems: 'flex-end', gap: 2, minWidth: 70 },
+  scoreLabel: {
+    fontFamily: font.title,
+    fontSize: 9,
+    letterSpacing: 1.5,
+    fontWeight: '800',
+  },
+  scoreValue: {
+    color: palette.bone,
+    fontFamily: font.title,
+    fontWeight: '900',
+    fontSize: 22,
+  },
 });

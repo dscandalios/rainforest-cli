@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { supabase } from '../src/lib/supabase';
+import { font, palette } from '../src/lib/theme';
 import type { Session } from '@supabase/supabase-js';
 
 const queryClient = new QueryClient({
@@ -40,13 +41,19 @@ export default function RootLayout() {
         <StatusBar style="light" />
         <Stack
           screenOptions={{
-            headerStyle: { backgroundColor: '#0b0b12' },
-            headerTintColor: '#f3f3f7',
-            contentStyle: { backgroundColor: '#0b0b12' },
+            headerStyle: { backgroundColor: palette.voidBlack },
+            headerTintColor: palette.bone,
+            headerTitleStyle: {
+              fontFamily: font.title,
+              fontWeight: '700',
+              color: palette.bone,
+            },
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: palette.voidBlack },
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="sign-in" options={{ title: 'Sign in' }} />
+          <Stack.Screen name="sign-in" options={{ headerShown: false }} />
           <Stack.Screen name="card/[id]" options={{ title: 'Card' }} />
           <Stack.Screen name="species/[id]" options={{ title: 'Species' }} />
         </Stack>
