@@ -3,18 +3,32 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 
-const supabaseUrl =
+const rawUrl =
   (Constants.expoConfig?.extra?.supabaseUrl as string | undefined) ??
   process.env.EXPO_PUBLIC_SUPABASE_URL ??
   '';
-const supabaseAnonKey =
+const rawKey =
   (Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined) ??
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
   '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// If the dev hasn't wired up a Supabase project yet (e.g. just running the UI
+// preview), fall back to harmless placeholders so createClient doesn't throw
+// at module-import time. Any network call will still fail loudly, but the UI
+// shell will render.
+const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
+const PLACEHOLDER_KEY = 'placeholder-anon-key';
+
+export const supabaseConfigured =
+  rawUrl.startsWith('http') && rawKey.length > 0 && !rawUrl.includes('YOUR-PROJECT');
+
+const supabaseUrl = supabaseConfigured ? rawUrl : PLACEHOLDER_URL;
+const supabaseAnonKey = supabaseConfigured ? rawKey : PLACEHOLDER_KEY;
+
+if (!supabaseConfigured) {
   console.warn(
-    'Supabase URL or anon key not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY in app.json extra or as EXPO_PUBLIC_* env vars.',
+    '[spider-cards] Supabase not configured — UI will render but auth and uploads will fail. ' +
+      'Set supabaseUrl + supabaseAnonKey in app.json extra (or EXPO_PUBLIC_* env vars).',
   );
 }
 
