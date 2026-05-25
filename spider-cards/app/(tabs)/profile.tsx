@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Avatar } from '../../src/components/Avatar';
 import {
   avatarPublicUrl,
@@ -24,6 +25,7 @@ import { font, palette, tierTheme } from '../../src/lib/theme';
 import type { Capture, Tier } from '../../src/types';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ['profile', 'mine'],
@@ -114,7 +116,10 @@ export default function ProfileScreen() {
   const avatarUri = avatarPublicUrl(profile?.avatar_path ?? null);
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 24 }]}
+    >
       <View style={styles.hero}>
         <Pressable onPress={pickAvatar} disabled={uploading}>
           <Avatar uri={avatarUri} handle={profile?.handle} size={104} />
@@ -153,7 +158,7 @@ export default function ProfileScreen() {
           </View>
         ) : (
           <Pressable onPress={() => setEditing(true)}>
-            <Text style={styles.handle}>@{profile?.handle ?? 'wanderer'}</Text>
+            <Text style={styles.handle}>{profile?.handle ?? 'wanderer'}</Text>
             <Text style={styles.tapToEdit}>tap to rename</Text>
           </Pressable>
         )}

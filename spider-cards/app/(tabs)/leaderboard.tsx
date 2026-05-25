@@ -125,22 +125,25 @@ function Row({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
           {rank.toString().padStart(2, '0')}
         </Text>
       </View>
-      <Avatar
-        uri={avatarPublicUrl(entry.avatar_path)}
-        handle={entry.handle}
-        size={42}
-      />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={styles.handle} numberOfLines={1}>
-          @{entry.handle}
-        </Text>
-        <Text style={styles.species} numberOfLines={1}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text style={[styles.species, { color: tt.textOnFrame }]} numberOfLines={1}>
           {entry.common_name}
         </Text>
         <Text style={styles.sci} numberOfLines={1}>
           {entry.scientific_name}
-          {entry.city ? ` · ${entry.city}` : ''}
         </Text>
+        <View style={styles.bylineRow}>
+          <Avatar
+            uri={avatarPublicUrl(entry.avatar_path)}
+            handle={entry.handle}
+            size={20}
+            ring={false}
+          />
+          <Text style={styles.byline} numberOfLines={1}>
+            by {entry.handle}
+            {entry.city ? ` · ${entry.city}` : ''}
+          </Text>
+        </View>
       </View>
       <View style={styles.scoreWrap}>
         <Text style={[styles.scoreLabel, { color: tt.accent }]}>
@@ -237,23 +240,31 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 16,
   },
-  handle: {
+  species: {
     color: palette.bone,
     fontFamily: font.title,
     fontWeight: '800',
     fontSize: 15,
-  },
-  species: {
-    color: palette.bone,
-    fontFamily: font.serif,
-    fontSize: 12,
-    opacity: 0.85,
+    letterSpacing: 0.3,
   },
   sci: {
-    color: palette.smoke,
+    color: palette.parchment,
     fontFamily: font.serif,
     fontStyle: 'italic',
+    fontSize: 11,
+    opacity: 0.85,
+  },
+  bylineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  byline: {
+    color: palette.smoke,
+    fontFamily: font.serif,
     fontSize: 10,
+    letterSpacing: 0.5,
   },
   scoreWrap: { alignItems: 'flex-end', gap: 2, minWidth: 70 },
   scoreLabel: {

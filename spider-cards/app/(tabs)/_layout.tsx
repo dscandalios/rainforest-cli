@@ -7,9 +7,9 @@ function TabIcon({ glyph, focused }: { glyph: string; focused: boolean }) {
   return (
     <Text
       style={{
-        fontSize: 18,
-        color: focused ? palette.aetherGold : palette.smoke,
-        opacity: focused ? 1 : 0.7,
+        fontSize: 20,
+        color: focused ? palette.aetherGold : palette.parchment,
+        opacity: focused ? 1 : 0.9,
       }}
     >
       {glyph}
@@ -22,17 +22,18 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: palette.aetherGold,
-        tabBarInactiveTintColor: palette.smoke,
+        tabBarInactiveTintColor: palette.parchment,
         tabBarStyle: {
           backgroundColor: palette.voidBlack,
-          borderTopColor: palette.crypt,
+          borderTopColor: palette.fog,
           borderTopWidth: 1,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontFamily: font.title,
-          fontWeight: '700',
+          fontWeight: '800',
           letterSpacing: 2,
-          fontSize: 10,
+          fontSize: 11,
         },
         headerShown: false,
       }}
