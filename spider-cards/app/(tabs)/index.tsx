@@ -6,10 +6,12 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { CardReveal } from '../../src/components/CardReveal';
 import { FramingOverlay } from '../../src/components/FramingOverlay';
 import { scanSpider, uploadAndPreparePhoto } from '../../src/lib/api';
@@ -27,6 +29,7 @@ export default function CaptureScreen() {
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [revealPhotoUrl, setRevealPhotoUrl] = useState<string | null>(null);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   if (!permission) {
     return (
@@ -109,6 +112,10 @@ export default function CaptureScreen() {
       setRevealPhotoUrl(url);
       setReveal(result.capture);
       setPhase('reveal');
+
+      // Refresh Collection + Leaderboard so the new capture appears.
+      queryClient.invalidateQueries({ queryKey: ['captures'] });
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
     } catch (err) {
       console.error(err);
       Alert.alert('Capture failed', String(err));
@@ -118,7 +125,10 @@ export default function CaptureScreen() {
 
   if (phase === 'reveal' && reveal) {
     return (
-      <View style={styles.revealWrap}>
+      <ScrollView
+        style={styles.revealScroll}
+        contentContainerStyle={styles.revealScrollContent}
+      >
         <CardReveal
           capture={{
             hp: reveal.hp,
@@ -154,7 +164,7 @@ export default function CaptureScreen() {
             <Text style={styles.btnText}>View card</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     );
   }
 
@@ -259,15 +269,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   busyWrap: { alignItems: 'center', gap: 8 },
-  revealWrap: {
+  revealScroll: {
     flex: 1,
     backgroundColor: colors.bg,
-    justifyContent: 'center',
+  },
+  revealScrollContent: {
+    paddingBottom: 24,
   },
   revealActions: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: 24,
   },
 });
