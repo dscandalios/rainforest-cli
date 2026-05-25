@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Spider Cards",
+    "slug": "spider-cards",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "spidercards",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b0b12"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.spidercards.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Spider Cards uses the camera to photograph spiders so it can generate trading cards.",
+        "NSPhotoLibraryUsageDescription": "Spider Cards needs photo access to save card images you share.",
+        "NSLocationWhenInUseUsageDescription": "Spider Cards uses your approximate location (city level) to tag captures and power regional leaderboards. Optional per capture.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0b12"
+      },
+      "package": "com.spidercards.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Spider Cards to access your camera to photograph spiders."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Spider Cards to use your approximate location to tag captures.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "supabaseUrl": "$SUPABASE_URL",
+      "supabaseAnonKey": "$SUPABASE_ANON_KEY"
+    }
+  }
+}
