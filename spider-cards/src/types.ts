@@ -12,6 +12,7 @@ export interface Species {
   flavor_text: string;
   medically_significant: boolean;
   safety_note: string | null;
+  hunting_style?: string | null;
 }
 
 export interface Capture {

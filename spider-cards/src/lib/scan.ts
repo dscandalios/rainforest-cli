@@ -252,6 +252,7 @@ export async function scanSpiderClient(opts: {
           flavor_text: species.flavor_text ?? scan.flavor_text,
           medically_significant: !!species.medically_significant,
           safety_note: species.safety_note,
+          hunting_style: (species.raw_traits as { hunting_style?: string } | null)?.hunting_style ?? null,
         },
       },
     };
