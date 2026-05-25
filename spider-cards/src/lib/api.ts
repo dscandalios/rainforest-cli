@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { scanSpiderClient } from './scan';
 import { supabase } from './supabase';
 import type { Capture, ScanResponse } from '../types';
 
@@ -14,21 +15,25 @@ function getSupabaseUrl(): string {
   );
 }
 
-export async function uploadCapturePhoto(localUri: string): Promise<string> {
+export interface UploadResult {
+  photoPath: string;
+  photoBase64: string;
+}
+
+export async function uploadAndPreparePhoto(localUri: string): Promise<UploadResult> {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('not signed in');
 
-  // Resize + compress to keep upload + Claude vision cost down.
   const processed = await manipulateAsync(
     localUri,
     [{ resize: { width: MAX_DIMENSION } }],
     { compress: 0.82, format: SaveFormat.JPEG },
   );
 
-  const fileBytes = await FileSystem.readAsStringAsync(processed.uri, {
+  const photoBase64 = await FileSystem.readAsStringAsync(processed.uri, {
     encoding: FileSystem.EncodingType.Base64,
   });
-  const bytes = decodeBase64(fileBytes);
+  const bytes = decodeBase64(photoBase64);
 
   const objectPath = `${user.id}/captures/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
   const { error } = await supabase.storage
@@ -38,33 +43,17 @@ export async function uploadCapturePhoto(localUri: string): Promise<string> {
       upsert: false,
     });
   if (error) throw error;
-  return objectPath;
+  return { photoPath: objectPath, photoBase64 };
 }
 
 export async function scanSpider(opts: {
   photoPath: string;
+  photoBase64: string;
   lat: number | null;
   lng: number | null;
   city: string | null;
 }): Promise<ScanResponse> {
-  const session = (await supabase.auth.getSession()).data.session;
-  if (!session) throw new Error('not signed in');
-
-  const url = `${getSupabaseUrl()}/functions/v1/scan-spider`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      photo_path: opts.photoPath,
-      lat: opts.lat,
-      lng: opts.lng,
-      city: opts.city,
-    }),
-  });
-  return (await res.json()) as ScanResponse;
+  return scanSpiderClient(opts);
 }
 
 export async function listMyCaptures(): Promise<Capture[]> {

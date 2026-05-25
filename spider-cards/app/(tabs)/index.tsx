@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { CardReveal } from '../../src/components/CardReveal';
 import { FramingOverlay } from '../../src/components/FramingOverlay';
-import { scanSpider, uploadCapturePhoto } from '../../src/lib/api';
+import { scanSpider, uploadAndPreparePhoto } from '../../src/lib/api';
 import { colors } from '../../src/lib/colors';
 import { signedPhotoUrl } from '../../src/lib/supabase';
 import type { ScanResponseOk } from '../../src/types';
@@ -80,14 +80,15 @@ export default function CaptureScreen() {
       if (!photo?.uri) throw new Error('camera returned no photo');
 
       setPhase('uploading');
-      const [photoPath, loc] = await Promise.all([
-        uploadCapturePhoto(photo.uri),
+      const [upload, loc] = await Promise.all([
+        uploadAndPreparePhoto(photo.uri),
         tryGetLocation(),
       ]);
 
       setPhase('scanning');
       const result = await scanSpider({
-        photoPath,
+        photoPath: upload.photoPath,
+        photoBase64: upload.photoBase64,
         lat: loc.lat,
         lng: loc.lng,
         city: loc.city,
