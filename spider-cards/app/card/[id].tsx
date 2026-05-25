@@ -49,6 +49,7 @@ export default function CardScreen() {
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
       <SpiderCard
+        detail
         capture={{
           hp: capture.hp,
           damage: capture.damage,

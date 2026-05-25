@@ -12,14 +12,23 @@ import {
   View,
 } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { CapturedBanner } from '../../src/components/CapturedBanner';
 import { CardReveal } from '../../src/components/CardReveal';
 import { FramingOverlay } from '../../src/components/FramingOverlay';
+import { ScanningOverlay } from '../../src/components/ScanningOverlay';
 import { scanSpider, uploadAndPreparePhoto } from '../../src/lib/api';
-import { colors } from '../../src/lib/colors';
+import { palette } from '../../src/lib/theme';
 import { signedPhotoUrl } from '../../src/lib/supabase';
 import type { ScanResponseOk } from '../../src/types';
 
-type Phase = 'idle' | 'capturing' | 'uploading' | 'scanning' | 'reveal' | 'rejected';
+type Phase =
+  | 'idle'
+  | 'capturing'
+  | 'uploading'
+  | 'scanning'
+  | 'captured' // brief "Spider Captured!" banner
+  | 'reveal'
+  | 'rejected';
 
 export default function CaptureScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -34,7 +43,7 @@ export default function CaptureScreen() {
   if (!permission) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
+        <ActivityIndicator color={palette.aetherSilver} />
       </View>
     );
   }
@@ -42,7 +51,9 @@ export default function CaptureScreen() {
     return (
       <View style={styles.center}>
         <Text style={styles.bigText}>Camera permission required</Text>
-        <Text style={styles.dim}>Spider Cards needs the camera to photograph spiders.</Text>
+        <Text style={styles.dim}>
+          Spider Cards needs the camera to photograph spiders.
+        </Text>
         <Pressable style={styles.btn} onPress={requestPermission}>
           <Text style={styles.btnText}>Grant access</Text>
         </Pressable>
@@ -50,7 +61,11 @@ export default function CaptureScreen() {
     );
   }
 
-  async function tryGetLocation(): Promise<{ lat: number | null; lng: number | null; city: string | null }> {
+  async function tryGetLocation(): Promise<{
+    lat: number | null;
+    lng: number | null;
+    city: string | null;
+  }> {
     try {
       const perm = await Location.getForegroundPermissionsAsync();
       if (perm.status !== 'granted') {
@@ -103,7 +118,9 @@ export default function CaptureScreen() {
         return;
       }
       if (result.rejected || !result.capture) {
-        setRejectionReason(result.rejected?.reason ?? 'Could not identify a spider.');
+        setRejectionReason(
+          result.rejected?.reason ?? 'Could not identify a spider.',
+        );
         setPhase('rejected');
         return;
       }
@@ -111,9 +128,8 @@ export default function CaptureScreen() {
       const url = await signedPhotoUrl(result.capture.photo_path);
       setRevealPhotoUrl(url);
       setReveal(result.capture);
-      setPhase('reveal');
+      setPhase('captured');
 
-      // Refresh Collection + Leaderboard so the new capture appears.
       queryClient.invalidateQueries({ queryKey: ['captures'] });
       queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
     } catch (err) {
@@ -123,6 +139,7 @@ export default function CaptureScreen() {
     }
   }
 
+  // ── REVEAL ────────────────────────────────────────────────────────────
   if (phase === 'reveal' && reveal) {
     return (
       <ScrollView
@@ -168,6 +185,7 @@ export default function CaptureScreen() {
     );
   }
 
+  // ── REJECTED ──────────────────────────────────────────────────────────
   if (phase === 'rejected') {
     return (
       <View style={styles.center}>
@@ -186,33 +204,37 @@ export default function CaptureScreen() {
     );
   }
 
-  const busy =
+  // ── CAMERA + OVERLAYS ────────────────────────────────────────────────
+  const scanning =
     phase === 'capturing' || phase === 'uploading' || phase === 'scanning';
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: palette.voidBlack }}>
       <CameraView ref={cameraRef} style={{ flex: 1 }} facing="back" />
-      <FramingOverlay />
+      {!scanning && phase !== 'captured' && <FramingOverlay />}
 
-      <View style={styles.bottom}>
-        {busy ? (
-          <View style={styles.busyWrap}>
-            <ActivityIndicator color={colors.accent} />
-            <Text style={styles.dim}>
-              {phase === 'capturing' && 'Capturing…'}
-              {phase === 'uploading' && 'Uploading photo…'}
-              {phase === 'scanning' && 'Identifying spider…'}
-            </Text>
-          </View>
-        ) : (
+      {scanning && <ScanningOverlay phase={phase as 'capturing' | 'uploading' | 'scanning'} />}
+
+      {phase === 'captured' && reveal && (
+        <CapturedBanner
+          tier={reveal.species.tier}
+          onDone={() => setPhase('reveal')}
+        />
+      )}
+
+      {!scanning && phase !== 'captured' && (
+        <View style={styles.bottom}>
           <Pressable
             onPress={onShutter}
-            style={({ pressed }) => [styles.shutter, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [
+              styles.shutter,
+              pressed && { opacity: 0.7 },
+            ]}
           >
             <View style={styles.shutterInner} />
           </Pressable>
-        )}
-      </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -223,28 +245,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: colors.bg,
+    backgroundColor: palette.voidBlack,
     gap: 12,
   },
-  bigText: { color: colors.text, fontSize: 22, fontWeight: '700' },
-  dim: { color: colors.textDim, textAlign: 'center' },
+  bigText: {
+    color: palette.bone,
+    fontSize: 22,
+    fontWeight: '700',
+    fontFamily: 'Georgia',
+  },
+  dim: { color: palette.smoke, textAlign: 'center' },
   btn: {
-    backgroundColor: colors.accent,
+    backgroundColor: palette.arcane,
     paddingVertical: 12,
     paddingHorizontal: 22,
     borderRadius: 10,
     marginTop: 8,
   },
   btnSecondary: {
-    backgroundColor: colors.bgElev,
-    borderColor: colors.border,
+    backgroundColor: palette.ash,
+    borderColor: palette.fog,
     borderWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 22,
     borderRadius: 10,
     marginTop: 8,
   },
-  btnText: { color: colors.text, fontWeight: '700' },
+  btnText: { color: palette.bone, fontWeight: '700', letterSpacing: 0.5 },
   bottom: {
     position: 'absolute',
     bottom: 32,
@@ -268,10 +295,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: '#fff',
   },
-  busyWrap: { alignItems: 'center', gap: 8 },
   revealScroll: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: palette.voidBlack,
   },
   revealScrollContent: {
     paddingBottom: 24,
